@@ -1,53 +1,50 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout}">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Formulario de Status</title>
+    <meta charset="UTF-8">
+    <title>Status de Ocupacao</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-<div layout:fragment="conteudo">
-    <h2 class="h4 mb-3" th:text="${status.idStatus != null} ? 'Editar Status' : 'Novo Status'"></h2>
+<div class="container">
+    <h1 class="mt-5" th:text="${acao} == '/status' ? 'Novo Status de Ocupacao' : 'Editar Status de Ocupacao'"></h1>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form th:action="${status.idStatus != null} ? @{'/status/' + ${status.idStatus} + '/atualizar'} : @{/status}"
-                  th:object="${status}" method="post">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Operacao</label>
-                        <select class="form-select" th:field="*{idOperacao}" required>
-                            <option value="">Selecione a operacao</option>
-                            <option th:each="o : ${operacoes}"
-                                    th:value="${o.idOperacao}"
-                                    th:text="'Operacao ' + ${o.idOperacao} + ' - ' + ${o.sentido}"></option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Faixa</label>
-                        <select class="form-select" th:field="*{idFaixa}" required>
-                            <option value="">Selecione a faixa</option>
-                            <option th:each="f : ${faixas}"
-                                    th:value="${f.idFaixa}"
-                                    th:text="${f.nomeFaixa} + ' (' + ${f.percentualMin} + '% a ' + ${f.percentualMax} + '%)'"></option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Data e hora de referencia</label>
-                        <input type="datetime-local" class="form-control" th:field="*{dataHoraReferencia}" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Percentual de ocupacao</label>
-                        <input type="number" step="0.01" min="0" class="form-control"
-                               th:field="*{percentualOcupacao}" required>
-                    </div>
-                </div>
-                <a class="btn btn-outline-secondary" th:href="@{/status}">Cancelar</a>
-                <button type="submit" class="btn btn-success">Salvar</button>
-            </form>
+    <div class="alert alert-danger" th:if="${erro}" th:text="${erro}"></div>
+
+    <form th:action="${acao}" th:object="${status}" method="post">
+        <div class="mb-3">
+            <label for="idOperacao" class="form-label">Operacao</label>
+            <select class="form-control" id="idOperacao" th:field="*{idOperacao}" required>
+                <option value="">Selecione</option>
+                <option th:each="op : ${operacoes}" th:value="${op.idOperacao}"
+                        th:text="${op.linha != null ? op.linha.nomeLinha + ' - ' + op.idOperacao : op.idOperacao}"></option>
+            </select>
+            <div class="text-danger" th:if="${#fields.hasErrors('idOperacao')}" th:errors="*{idOperacao}"></div>
         </div>
-    </div>
+        <div class="mb-3">
+            <label for="idFaixa" class="form-label">Faixa</label>
+            <select class="form-control" id="idFaixa" th:field="*{idFaixa}" required>
+                <option value="">Selecione</option>
+                <option th:each="f : ${faixas}" th:value="${f.idFaixa}"
+                        th:text="${f.nomeFaixa}"></option>
+            </select>
+            <div class="text-danger" th:if="${#fields.hasErrors('idFaixa')}" th:errors="*{idFaixa}"></div>
+        </div>
+        <div class="mb-3">
+            <label for="percentualOcupacao" class="form-label">Percentual de Ocupacao</label>
+            <input type="number" step="0.01" min="0" max="200" class="form-control"
+                   id="percentualOcupacao" th:field="*{percentualOcupacao}" required>
+            <div class="text-danger" th:if="${#fields.hasErrors('percentualOcupacao')}" th:errors="*{percentualOcupacao}"></div>
+        </div>
+        <div class="mb-3">
+            <label for="dataHoraReferencia" class="form-label">Data e Hora de Referencia</label>
+            <input type="datetime-local" class="form-control" id="dataHoraReferencia"
+                   th:field="*{dataHoraReferencia}" required>
+            <div class="text-danger" th:if="${#fields.hasErrors('dataHoraReferencia')}" th:errors="*{dataHoraReferencia}"></div>
+        </div>
+        <button type="submit" class="btn btn-success">Salvar</button>
+        <a th:href="@{/status}" class="btn btn-secondary">Cancelar</a>
+    </form>
 </div>
 </body>
 </html>

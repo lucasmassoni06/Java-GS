@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Leituras</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-5">Leituras</h1>
+
+    <div class="alert alert-warning" th:if="${param.erro}">
+        Nao foi possivel excluir: existem registros vinculados.
+    </div>
+
+    <a th:href="@{/leituras/novo}" class="btn btn-primary mb-3">Nova Leitura</a>
+
+    <table class="table table-striped mt-3">
+        <thead>
+        <tr>
+            <th>Camera</th>
+            <th>Linha</th>
+            <th>Frota</th>
+            <th>Pessoas</th>
+            <th>Data/Hora</th>
+            <th>Acoes</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="l : ${leituras}">
+            <td th:text="${l.nomeCamera}"></td>
+            <td th:text="${l.nomeLinha}"></td>
+            <td th:text="${l.prefixoFrota}"></td>
+            <td th:text="${l.contagemPessoas}"></td>
+            <td th:text="${l.dataHoraLeitura != null} ? ${#temporals.format(l.dataHoraLeitura, 'dd/MM/yyyy HH:mm')} : ''"></td>
+            <td>
+                <a th:href="@{/leituras/editar/{id}(id=${l.idLeitura})}" class="btn btn-warning btn-sm me-1">Editar</a>
+                <a th:href="@{/leituras/excluir/{id}(id=${l.idLeitura})}" class="btn btn-danger btn-sm"
+                   onclick="return confirm('Excluir esta leitura?')">Excluir</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a th:href="@{/}" class="btn btn-secondary">Voltar</a>
+</div>
+</body>
+</html>

@@ -1,12 +1,15 @@
 package br.com.fiap.citizentech.controller.api;
 
+import br.com.fiap.citizentech.exception.ResourceNotFoundException;
 import br.com.fiap.citizentech.model.dto.StatusOcupacaoDTO;
 import br.com.fiap.citizentech.model.entity.FaixaOcupacao;
 import br.com.fiap.citizentech.model.entity.Operacao;
+import br.com.fiap.citizentech.model.entity.StatusOcupacao;
 import br.com.fiap.citizentech.model.repository.FaixaOcupacaoRepository;
 import br.com.fiap.citizentech.model.repository.OperacaoRepository;
 import br.com.fiap.citizentech.model.repository.StatusOcupacaoRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,17 +20,14 @@ import java.util.List;
 @RequestMapping("/api/status")
 public class StatusOcupacaoRestController {
 
-    private final StatusOcupacaoRepository statusRepository;
-    private final OperacaoRepository operacaoRepository;
-    private final FaixaOcupacaoRepository faixaRepository;
+    @Autowired
+    private StatusOcupacaoRepository statusRepository;
 
-    public StatusOcupacaoRestController(StatusOcupacaoRepository statusRepository,
-                                        OperacaoRepository operacaoRepository,
-                                        FaixaOcupacaoRepository faixaRepository) {
-        this.statusRepository = statusRepository;
-        this.operacaoRepository = operacaoRepository;
-        this.faixaRepository = faixaRepository;
-    }
+    @Autowired
+    private OperacaoRepository operacaoRepository;
+
+    @Autowired
+    private FaixaOcupacaoRepository faixaRepository;
 
     @GetMapping
     public List<StatusOcupacaoDTO> listar() {
@@ -39,22 +39,19 @@ public class StatusOcupacaoRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<StatusOcupacaoDTO> buscar(@PathVariable Long id) {
-        return statusRepository.findById(id)
-                .map(s -> ResponseEntity.ok(new StatusOcupacaoDTO(s)))
-                .orElse(ResponseEntity.notFound().build());
+        StatusOcupacao status = statusRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("StatusOcupacao", id));
+        return ResponseEntity.ok(new StatusOcupacaoDTO(status));
     }
 
     @PostMapping
     public ResponseEntity<StatusOcupacaoDTO> criar(@RequestBody @Valid StatusOcupacaoDTO dto) {
-        Operacao operacao = operacaoRepository.findById(dto.getIdOperacao()).orElse(null);
-        FaixaOcupacao faixa = faixaRepository.findById(dto.getIdFaixa()).orElse(null);
+        Operacao operacao = operacaoRepository.findById(dto.getIdOperacao())
+                .orElseThrow(() -> new ResourceNotFoundException("Operacao", dto.getIdOperacao()));
+        FaixaOcupacao faixa = faixaRepository.findById(dto.getIdFaixa())
+                .orElseThrow(() -> new ResourceNotFoundException("FaixaOcupacao", dto.getIdFaixa()));
 
-        if (operacao == null || faixa == null) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        dto.setAtualizadoEm(java.time.LocalDateTime.now());
-        var salvo = statusRepository.save(dto.toEntity(operacao, faixa));
+        StatusOcupacao salvo = statusRepository.save(dto.toEntity(operacao, faixa));
         return ResponseEntity.status(HttpStatus.CREATED).body(new StatusOcupacaoDTO(salvo));
     }
 
@@ -62,27 +59,30 @@ public class StatusOcupacaoRestController {
     public ResponseEntity<StatusOcupacaoDTO> atualizar(@PathVariable Long id,
                                                        @RequestBody @Valid StatusOcupacaoDTO dto) {
         if (!statusRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        Operacao operacao = operacaoRepository.findById(dto.getIdOperacao()).orElse(null);
-        FaixaOcupacao faixa = faixaRepository.findById(dto.getIdFaixa()).orElse(null);
-
-        if (operacao == null || faixa == null) {
-            return ResponseEntity.badRequest().build();
+            throw new ResourceNotFoundException("StatusOcupacao", id);
         }
 
-        dto.setIdStatus(id);
-        dto.setAtualizadoEm(java.time.LocalDateTime.now());
-        var salvo = statusRepository.save(dto.toEntity(operacao, faixa));
+        Operacao operacao = operacaoRepository.findById(dto.getIdOperacao())
+                .orElseThrow(() -> new ResourceNotFoundException("Operacao", dto.getIdOperacao()));
+        FaixaOcupacao faixa = faixaRepository.findById(dto.getIdFaixa())
+                .orElseThrow(() -> new ResourceNotFoundException("FaixaOcupacao", dto.getIdFaixa()));
+
+        StatusOcupacao status = dto.toEntity(operacao, faixa);
+        status.setIdStatus(id);
+        StatusOcupacao salvo = statusRepository.save(status);
         return ResponseEntity.ok(new StatusOcupacaoDTO(salvo));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         if (!statusRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("StatusOcupacao", id);
         }
-        statusRepository.deleteById(id);
+        try {
+            statusRepository.deleteById(id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
         return ResponseEntity.noContent().build();
     }
 }

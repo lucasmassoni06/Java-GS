@@ -12,135 +12,149 @@ import br.com.fiap.citizentech.model.repository.LeituraRepository;
 import br.com.fiap.citizentech.model.repository.OperacaoRepository;
 import br.com.fiap.citizentech.model.repository.StatusOcupacaoRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Controller
 @RequestMapping("/leituras")
 public class LeituraViewController {
 
-    private final LeituraRepository leituraRepository;
-    private final CameraRepository cameraRepository;
-    private final OperacaoRepository operacaoRepository;
-    private final FaixaOcupacaoRepository faixaRepository;
-    private final StatusOcupacaoRepository statusRepository;
+    @Autowired
+    private LeituraRepository leituraRepository;
 
-    public LeituraViewController(LeituraRepository leituraRepository,
-                                 CameraRepository cameraRepository,
-                                 OperacaoRepository operacaoRepository,
-                                 FaixaOcupacaoRepository faixaRepository,
-                                 StatusOcupacaoRepository statusRepository) {
-        this.leituraRepository = leituraRepository;
-        this.cameraRepository = cameraRepository;
-        this.operacaoRepository = operacaoRepository;
-        this.faixaRepository = faixaRepository;
-        this.statusRepository = statusRepository;
-    }
+    @Autowired
+    private CameraRepository cameraRepository;
+
+    @Autowired
+    private OperacaoRepository operacaoRepository;
+
+    @Autowired
+    private FaixaOcupacaoRepository faixaRepository;
+
+    @Autowired
+    private StatusOcupacaoRepository statusRepository;
 
     @GetMapping
-    public String listar(Model model) {
-        List<LeituraDTO> leituras = leituraRepository.findAll()
+    public ModelAndView listar() {
+        ModelAndView mv = new ModelAndView("leituras/lista");
+        mv.addObject("leituras", leituraRepository.findAll()
                 .stream()
                 .map(LeituraDTO::new)
-                .toList();
-        model.addAttribute("leituras", leituras);
-        return "leituras/list";
+                .toList());
+        return mv;
     }
 
     @GetMapping("/novo")
-    public String novo(Model model) {
-        model.addAttribute("leitura", new LeituraDTO());
-        model.addAttribute("cameras", cameraRepository.findAll());
-        model.addAttribute("operacoes", operacaoRepository.findAll());
-        return "leituras/form";
+    public ModelAndView novo() {
+        ModelAndView mv = new ModelAndView("leituras/form");
+        mv.addObject("leitura", new LeituraDTO());
+        mv.addObject("cameras", cameraRepository.findAll());
+        mv.addObject("operacoes", operacaoRepository.findAll());
+        mv.addObject("acao", "/leituras");
+        return mv;
     }
 
     @PostMapping
-    public String criar(@ModelAttribute("leitura") @Valid LeituraDTO dto,
-                        BindingResult result,
-                        Model model,
-                        RedirectAttributes redirect) {
+    public ModelAndView cadastrar(@Valid @ModelAttribute("leitura") LeituraDTO dto,
+                                  BindingResult result) {
         if (result.hasErrors()) {
-            model.addAttribute("cameras", cameraRepository.findAll());
-            model.addAttribute("operacoes", operacaoRepository.findAll());
-            return "leituras/form";
+            ModelAndView mv = new ModelAndView("leituras/form");
+            mv.addObject("cameras", cameraRepository.findAll());
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("acao", "/leituras");
+            return mv;
         }
 
         Camera camera = cameraRepository.findById(dto.getIdCamera()).orElse(null);
         Operacao operacao = operacaoRepository.findById(dto.getIdOperacao()).orElse(null);
 
         if (camera == null || operacao == null) {
-            redirect.addFlashAttribute("erro", "Camera ou operacao invalida");
-            return "redirect:/leituras/novo";
+            ModelAndView mv = new ModelAndView("leituras/form");
+            mv.addObject("cameras", cameraRepository.findAll());
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("acao", "/leituras");
+            mv.addObject("erro", "Camera ou operacao invalida.");
+            return mv;
         }
 
         Leitura salva = leituraRepository.save(dto.toEntity(camera, operacao));
 
-        Integer capacidade = operacao.getVeiculo().getCapacidadeTotal();
-        Double percentual = LeituraDTO.calcularPercentual(salva.getContagemPessoas(), capacidade);
-        FaixaOcupacao faixa = LeituraDTO.escolherFaixa(percentual, faixaRepository.findAll());
+        if (operacao.getVeiculo() != null) {
+            Integer capacidade = operacao.getVeiculo().getCapacidadeTotal();
+            Double percentual = LeituraDTO.calcularPercentual(salva.getContagemPessoas(), capacidade);
+            FaixaOcupacao faixa = LeituraDTO.escolherFaixa(percentual, faixaRepository.findAll());
 
-        if (faixa != null) {
-            StatusOcupacao status = new StatusOcupacao();
-            status.setOperacao(operacao);
-            status.setFaixa(faixa);
-            status.setDataHoraReferencia(salva.getDataHoraLeitura());
-            status.setPercentualOcupacao(percentual);
-            status.setAtualizadoEm(LocalDateTime.now());
-            statusRepository.save(status);
+            if (faixa != null) {
+                StatusOcupacao status = new StatusOcupacao();
+                status.setOperacao(operacao);
+                status.setFaixa(faixa);
+                status.setDataHoraReferencia(salva.getDataHoraLeitura());
+                status.setPercentualOcupacao(percentual);
+                status.setAtualizadoEm(LocalDateTime.now());
+                statusRepository.save(status);
+            }
         }
 
-        redirect.addFlashAttribute("sucesso", "Leitura registrada com sucesso");
-        return "redirect:/leituras";
+        return new ModelAndView("redirect:/leituras");
     }
 
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id, Model model) {
-        return leituraRepository.findById(id)
-                .map(l -> {
-                    model.addAttribute("leitura", new LeituraDTO(l));
-                    model.addAttribute("cameras", cameraRepository.findAll());
-                    model.addAttribute("operacoes", operacaoRepository.findAll());
-                    return "leituras/form";
-                })
-                .orElse("redirect:/leituras");
+    @GetMapping("/editar/{id}")
+    public ModelAndView editar(@PathVariable Long id) {
+        Leitura leitura = leituraRepository.findById(id).orElse(null);
+        if (leitura == null) {
+            return new ModelAndView("redirect:/leituras");
+        }
+        ModelAndView mv = new ModelAndView("leituras/form");
+        mv.addObject("leitura", new LeituraDTO(leitura));
+        mv.addObject("cameras", cameraRepository.findAll());
+        mv.addObject("operacoes", operacaoRepository.findAll());
+        mv.addObject("acao", "/leituras/atualizar/" + id);
+        return mv;
     }
 
-    @PostMapping("/{id}/atualizar")
-    public String atualizar(@PathVariable Long id,
-                            @ModelAttribute("leitura") @Valid LeituraDTO dto,
-                            BindingResult result,
-                            Model model,
-                            RedirectAttributes redirect) {
+    @PostMapping("/atualizar/{id}")
+    public ModelAndView atualizar(@PathVariable Long id,
+                                  @Valid @ModelAttribute("leitura") LeituraDTO dto,
+                                  BindingResult result) {
         if (result.hasErrors()) {
-            model.addAttribute("cameras", cameraRepository.findAll());
-            model.addAttribute("operacoes", operacaoRepository.findAll());
-            return "leituras/form";
+            ModelAndView mv = new ModelAndView("leituras/form");
+            mv.addObject("cameras", cameraRepository.findAll());
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("acao", "/leituras/atualizar/" + id);
+            return mv;
         }
+
         Camera camera = cameraRepository.findById(dto.getIdCamera()).orElse(null);
         Operacao operacao = operacaoRepository.findById(dto.getIdOperacao()).orElse(null);
 
         if (camera == null || operacao == null) {
-            redirect.addFlashAttribute("erro", "Camera ou operacao invalida");
-            return "redirect:/leituras";
+            ModelAndView mv = new ModelAndView("leituras/form");
+            mv.addObject("cameras", cameraRepository.findAll());
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("acao", "/leituras/atualizar/" + id);
+            mv.addObject("erro", "Camera ou operacao invalida.");
+            return mv;
         }
 
-        dto.setIdLeitura(id);
-        leituraRepository.save(dto.toEntity(camera, operacao));
-        redirect.addFlashAttribute("sucesso", "Leitura atualizada");
-        return "redirect:/leituras";
+        Leitura leitura = dto.toEntity(camera, operacao);
+        leitura.setIdLeitura(id);
+        leituraRepository.save(leitura);
+
+        return new ModelAndView("redirect:/leituras");
     }
 
-    @PostMapping("/{id}/deletar")
-    public String deletar(@PathVariable Long id, RedirectAttributes redirect) {
-        leituraRepository.deleteById(id);
-        redirect.addFlashAttribute("sucesso", "Leitura removida");
-        return "redirect:/leituras";
+    @GetMapping("/excluir/{id}")
+    public ModelAndView excluir(@PathVariable Long id) {
+        try {
+            leituraRepository.deleteById(id);
+        } catch (Exception e) {
+            return new ModelAndView("redirect:/leituras?erro=vinculo");
+        }
+        return new ModelAndView("redirect:/leituras");
     }
 }

@@ -7,6 +7,7 @@ import br.com.fiap.citizentech.model.entity.Operacao;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -22,18 +23,19 @@ public class LeituraDTO {
     @NotNull(message = "A operacao e obrigatoria")
     private Long idOperacao;
 
-    @NotNull(message = "A data e hora da leitura e obrigatoria")
-    private LocalDateTime dataHoraLeitura;
-
     @NotNull(message = "A contagem de pessoas e obrigatoria")
     @Min(value = 0, message = "A contagem nao pode ser negativa")
     private Integer contagemPessoas;
+
+    @NotNull(message = "A data e hora da leitura e obrigatoria")
+    private LocalDateTime dataHoraLeitura;
 
     @NotNull(message = "O nivel de confianca e obrigatorio")
     @DecimalMin(value = "0.0", message = "O nivel minimo e 0")
     @DecimalMax(value = "100.0", message = "O nivel maximo e 100")
     private Double nivelConfianca;
 
+    @NotBlank(message = "O status da leitura e obrigatorio")
     private String statusLeitura;
 
     private String nomeCamera;
@@ -47,8 +49,8 @@ public class LeituraDTO {
         this.idLeitura = leitura.getIdLeitura();
         this.idCamera = leitura.getCamera() != null ? leitura.getCamera().getIdCamera() : null;
         this.idOperacao = leitura.getOperacao() != null ? leitura.getOperacao().getIdOperacao() : null;
-        this.dataHoraLeitura = leitura.getDataHoraLeitura();
         this.contagemPessoas = leitura.getContagemPessoas();
+        this.dataHoraLeitura = leitura.getDataHoraLeitura();
         this.nivelConfianca = leitura.getNivelConfianca();
         this.statusLeitura = leitura.getStatusLeitura();
         this.nomeCamera = leitura.getCamera() != null ? leitura.getCamera().getNomeCamera() : null;
@@ -63,28 +65,30 @@ public class LeituraDTO {
         leitura.setIdLeitura(this.idLeitura);
         leitura.setCamera(camera);
         leitura.setOperacao(operacao);
-        leitura.setDataHoraLeitura(this.dataHoraLeitura);
         leitura.setContagemPessoas(this.contagemPessoas);
-        leitura.setNivelConfianca(this.nivelConfianca);
-        leitura.setStatusLeitura(this.statusLeitura);
+        leitura.setDataHoraLeitura(this.dataHoraLeitura);
+        leitura.setNivelConfianca(this.nivelConfianca != null ? this.nivelConfianca : 100.0);
+        leitura.setStatusLeitura(this.statusLeitura != null ? this.statusLeitura : "PROCESSADA");
         return leitura;
     }
 
-    public static Double calcularPercentual(Integer contagem, Integer capacidadeTotal) {
-        if (contagem == null || capacidadeTotal == null || capacidadeTotal == 0) {
+    public static Double calcularPercentual(Integer contagem, Integer capacidade) {
+        if (contagem == null || capacidade == null || capacidade == 0) {
             return 0.0;
         }
-        return (contagem * 100.0) / capacidadeTotal;
+        return (contagem * 100.0) / capacidade;
     }
 
     public static FaixaOcupacao escolherFaixa(Double percentual, List<FaixaOcupacao> faixas) {
-        if (faixas == null || faixas.isEmpty() || percentual == null) {
+        if (percentual == null || faixas == null) {
             return null;
         }
-        return faixas.stream()
-                .filter(f -> percentual >= f.getPercentualMin() && percentual <= f.getPercentualMax())
-                .findFirst()
-                .orElse(faixas.get(faixas.size() - 1));
+        for (FaixaOcupacao faixa : faixas) {
+            if (percentual >= faixa.getPercentualMin() && percentual <= faixa.getPercentualMax()) {
+                return faixa;
+            }
+        }
+        return null;
     }
 
     public Long getIdLeitura() {
@@ -111,20 +115,20 @@ public class LeituraDTO {
         this.idOperacao = idOperacao;
     }
 
-    public LocalDateTime getDataHoraLeitura() {
-        return dataHoraLeitura;
-    }
-
-    public void setDataHoraLeitura(LocalDateTime dataHoraLeitura) {
-        this.dataHoraLeitura = dataHoraLeitura;
-    }
-
     public Integer getContagemPessoas() {
         return contagemPessoas;
     }
 
     public void setContagemPessoas(Integer contagemPessoas) {
         this.contagemPessoas = contagemPessoas;
+    }
+
+    public LocalDateTime getDataHoraLeitura() {
+        return dataHoraLeitura;
+    }
+
+    public void setDataHoraLeitura(LocalDateTime dataHoraLeitura) {
+        this.dataHoraLeitura = dataHoraLeitura;
     }
 
     public Double getNivelConfianca() {

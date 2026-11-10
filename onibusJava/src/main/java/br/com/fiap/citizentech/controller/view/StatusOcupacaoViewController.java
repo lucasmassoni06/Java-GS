@@ -7,112 +7,123 @@ import br.com.fiap.citizentech.model.repository.FaixaOcupacaoRepository;
 import br.com.fiap.citizentech.model.repository.OperacaoRepository;
 import br.com.fiap.citizentech.model.repository.StatusOcupacaoRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 @RequestMapping("/status")
 public class StatusOcupacaoViewController {
 
-    private final StatusOcupacaoRepository statusRepository;
-    private final OperacaoRepository operacaoRepository;
-    private final FaixaOcupacaoRepository faixaRepository;
+    @Autowired
+    private StatusOcupacaoRepository statusRepository;
 
-    public StatusOcupacaoViewController(StatusOcupacaoRepository statusRepository,
-                                        OperacaoRepository operacaoRepository,
-                                        FaixaOcupacaoRepository faixaRepository) {
-        this.statusRepository = statusRepository;
-        this.operacaoRepository = operacaoRepository;
-        this.faixaRepository = faixaRepository;
-    }
+    @Autowired
+    private OperacaoRepository operacaoRepository;
+
+    @Autowired
+    private FaixaOcupacaoRepository faixaRepository;
 
     @GetMapping
-    public String listar(Model model) {
-        model.addAttribute("status", statusRepository.findAll()
+    public ModelAndView listar() {
+        ModelAndView mv = new ModelAndView("status/lista");
+        mv.addObject("status", statusRepository.findAll()
                 .stream()
                 .map(StatusOcupacaoDTO::new)
                 .toList());
-        return "status/list";
+        return mv;
     }
 
     @GetMapping("/novo")
-    public String novo(Model model) {
-        model.addAttribute("status", new StatusOcupacaoDTO());
-        model.addAttribute("operacoes", operacaoRepository.findAll());
-        model.addAttribute("faixas", faixaRepository.findAll());
-        return "status/form";
+    public ModelAndView novo() {
+        ModelAndView mv = new ModelAndView("status/form");
+        mv.addObject("status", new StatusOcupacaoDTO());
+        mv.addObject("operacoes", operacaoRepository.findAll());
+        mv.addObject("faixas", faixaRepository.findAll());
+        mv.addObject("acao", "/status");
+        return mv;
     }
 
     @PostMapping
-    public String criar(@ModelAttribute("status") @Valid StatusOcupacaoDTO dto,
-                        BindingResult result,
-                        Model model,
-                        RedirectAttributes redirect) {
+    public ModelAndView cadastrar(@Valid @ModelAttribute("status") StatusOcupacaoDTO dto,
+                                  BindingResult result) {
         if (result.hasErrors()) {
-            model.addAttribute("operacoes", operacaoRepository.findAll());
-            model.addAttribute("faixas", faixaRepository.findAll());
-            return "status/form";
+            ModelAndView mv = new ModelAndView("status/form");
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("faixas", faixaRepository.findAll());
+            mv.addObject("acao", "/status");
+            return mv;
         }
+
         Operacao operacao = operacaoRepository.findById(dto.getIdOperacao()).orElse(null);
         FaixaOcupacao faixa = faixaRepository.findById(dto.getIdFaixa()).orElse(null);
 
         if (operacao == null || faixa == null) {
-            redirect.addFlashAttribute("erro", "Operacao ou faixa invalida");
-            return "redirect:/status/novo";
+            ModelAndView mv = new ModelAndView("status/form");
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("faixas", faixaRepository.findAll());
+            mv.addObject("acao", "/status");
+            mv.addObject("erro", "Operacao ou faixa invalida.");
+            return mv;
         }
-
-        dto.setAtualizadoEm(java.time.LocalDateTime.now());
 
         statusRepository.save(dto.toEntity(operacao, faixa));
-        redirect.addFlashAttribute("sucesso", "Status registrado");
-        return "redirect:/status";
+        return new ModelAndView("redirect:/status");
     }
 
-    @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id, Model model) {
-        return statusRepository.findById(id)
-                .map(s -> {
-                    model.addAttribute("status", new StatusOcupacaoDTO(s));
-                    model.addAttribute("operacoes", operacaoRepository.findAll());
-                    model.addAttribute("faixas", faixaRepository.findAll());
-                    return "status/form";
-                })
-                .orElse("redirect:/status");
-    }
-
-    @PostMapping("/{id}/atualizar")
-    public String atualizar(@PathVariable Long id,
-                            @ModelAttribute("status") @Valid StatusOcupacaoDTO dto,
-                            BindingResult result,
-                            Model model,
-                            RedirectAttributes redirect) {
-        if (result.hasErrors()) {
-            model.addAttribute("operacoes", operacaoRepository.findAll());
-            model.addAttribute("faixas", faixaRepository.findAll());
-            return "status/form";
+    @GetMapping("/editar/{id}")
+    public ModelAndView editar(@PathVariable Long id) {
+        var status = statusRepository.findById(id).orElse(null);
+        if (status == null) {
+            return new ModelAndView("redirect:/status");
         }
+        ModelAndView mv = new ModelAndView("status/form");
+        mv.addObject("status", new StatusOcupacaoDTO(status));
+        mv.addObject("operacoes", operacaoRepository.findAll());
+        mv.addObject("faixas", faixaRepository.findAll());
+        mv.addObject("acao", "/status/atualizar/" + id);
+        return mv;
+    }
+
+    @PostMapping("/atualizar/{id}")
+    public ModelAndView atualizar(@PathVariable Long id,
+                                  @Valid @ModelAttribute("status") StatusOcupacaoDTO dto,
+                                  BindingResult result) {
+        if (result.hasErrors()) {
+            ModelAndView mv = new ModelAndView("status/form");
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("faixas", faixaRepository.findAll());
+            mv.addObject("acao", "/status/atualizar/" + id);
+            return mv;
+        }
+
         Operacao operacao = operacaoRepository.findById(dto.getIdOperacao()).orElse(null);
         FaixaOcupacao faixa = faixaRepository.findById(dto.getIdFaixa()).orElse(null);
 
         if (operacao == null || faixa == null) {
-            redirect.addFlashAttribute("erro", "Operacao ou faixa invalida");
-            return "redirect:/status";
+            ModelAndView mv = new ModelAndView("status/form");
+            mv.addObject("operacoes", operacaoRepository.findAll());
+            mv.addObject("faixas", faixaRepository.findAll());
+            mv.addObject("acao", "/status/atualizar/" + id);
+            mv.addObject("erro", "Operacao ou faixa invalida.");
+            return mv;
         }
 
-        dto.setIdStatus(id);
-        dto.setAtualizadoEm(java.time.LocalDateTime.now());
-        statusRepository.save(dto.toEntity(operacao, faixa));
-        redirect.addFlashAttribute("sucesso", "Status atualizado");
-        return "redirect:/status";
+        var status = dto.toEntity(operacao, faixa);
+        status.setIdStatus(id);
+        statusRepository.save(status);
+        return new ModelAndView("redirect:/status");
     }
 
-    @PostMapping("/{id}/deletar")
-    public String deletar(@PathVariable Long id, RedirectAttributes redirect) {
-        statusRepository.deleteById(id);
-        redirect.addFlashAttribute("sucesso", "Status removido");
-        return "redirect:/status";
+    @GetMapping("/excluir/{id}")
+    public ModelAndView excluir(@PathVariable Long id) {
+        try {
+            statusRepository.deleteById(id);
+        } catch (Exception e) {
+            return new ModelAndView("redirect:/status?erro=vinculo");
+        }
+        return new ModelAndView("redirect:/status");
     }
 }

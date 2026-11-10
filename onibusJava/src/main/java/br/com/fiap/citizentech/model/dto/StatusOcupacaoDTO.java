@@ -3,6 +3,8 @@ package br.com.fiap.citizentech.model.dto;
 import br.com.fiap.citizentech.model.entity.FaixaOcupacao;
 import br.com.fiap.citizentech.model.entity.Operacao;
 import br.com.fiap.citizentech.model.entity.StatusOcupacao;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -10,14 +12,26 @@ import java.time.LocalDateTime;
 public class StatusOcupacaoDTO {
 
     private Long idStatus;
+
+    @NotNull(message = "A operacao e obrigatoria")
     private Long idOperacao;
+
+    @NotNull(message = "A faixa de ocupacao e obrigatoria")
     private Long idFaixa;
+
     private String nomeFaixa;
     private String corHex;
     private String nomeLinha;
     private String prefixoFrota;
+
+    @NotNull(message = "A data e hora de referencia e obrigatoria")
     private LocalDateTime dataHoraReferencia;
+
+    @NotNull(message = "O percentual de ocupacao e obrigatorio")
+    @DecimalMin(value = "0.0", message = "O percentual minimo e 0")
+    @DecimalMax(value = "200.0", message = "O percentual maximo e 200")
     private Double percentualOcupacao;
+
     private LocalDateTime atualizadoEm;
 
     public StatusOcupacaoDTO() {
@@ -45,7 +59,7 @@ public class StatusOcupacaoDTO {
         status.setFaixa(faixa);
         status.setDataHoraReferencia(this.dataHoraReferencia);
         status.setPercentualOcupacao(this.percentualOcupacao);
-        status.setAtualizadoEm(this.atualizadoEm);
+        status.setAtualizadoEm(this.atualizadoEm != null ? this.atualizadoEm : LocalDateTime.now());
         return status;
     }
 
@@ -128,7 +142,4 @@ public class StatusOcupacaoDTO {
     public void setAtualizadoEm(LocalDateTime atualizadoEm) {
         this.atualizadoEm = atualizadoEm;
     }
-
-    @NotNull(message = "A data e hora de referencia e obrigatoria")
-    private LocalDateTime dataHoraReferencia;
 }

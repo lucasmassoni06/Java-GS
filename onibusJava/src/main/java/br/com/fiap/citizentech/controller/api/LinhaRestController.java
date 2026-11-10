@@ -1,8 +1,11 @@
 package br.com.fiap.citizentech.controller.api;
 
+import br.com.fiap.citizentech.exception.ResourceNotFoundException;
 import br.com.fiap.citizentech.model.dto.LinhaDTO;
+import br.com.fiap.citizentech.model.entity.Linha;
 import br.com.fiap.citizentech.model.repository.LinhaRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,11 +16,8 @@ import java.util.List;
 @RequestMapping("/api/linhas")
 public class LinhaRestController {
 
-    private final LinhaRepository linhaRepository;
-
-    public LinhaRestController(LinhaRepository linhaRepository) {
-        this.linhaRepository = linhaRepository;
-    }
+    @Autowired
+    private LinhaRepository linhaRepository;
 
     @GetMapping
     public List<LinhaDTO> listar() {
@@ -29,14 +29,14 @@ public class LinhaRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<LinhaDTO> buscar(@PathVariable Long id) {
-        return linhaRepository.findById(id)
-                .map(l -> ResponseEntity.ok(new LinhaDTO(l)))
-                .orElse(ResponseEntity.notFound().build());
+        Linha linha = linhaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Linha", id));
+        return ResponseEntity.ok(new LinhaDTO(linha));
     }
 
     @PostMapping
     public ResponseEntity<LinhaDTO> criar(@RequestBody @Valid LinhaDTO dto) {
-        var salva = linhaRepository.save(dto.toEntity());
+        Linha salva = linhaRepository.save(dto.toEntity());
         return ResponseEntity.status(HttpStatus.CREATED).body(new LinhaDTO(salva));
     }
 
@@ -44,19 +44,24 @@ public class LinhaRestController {
     public ResponseEntity<LinhaDTO> atualizar(@PathVariable Long id,
                                               @RequestBody @Valid LinhaDTO dto) {
         if (!linhaRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Linha", id);
         }
-        dto.setIdLinha(id);
-        var salva = linhaRepository.save(dto.toEntity());
+        Linha linha = dto.toEntity();
+        linha.setIdLinha(id);
+        Linha salva = linhaRepository.save(linha);
         return ResponseEntity.ok(new LinhaDTO(salva));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         if (!linhaRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Linha", id);
         }
-        linhaRepository.deleteById(id);
+        try {
+            linhaRepository.deleteById(id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
         return ResponseEntity.noContent().build();
     }
 }
