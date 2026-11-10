@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Leituras</title>
+</head>
+<body>
+<div layout:fragment="conteudo">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Leituras de Camera</h2>
+        <a class="btn btn-success" th:href="@{/leituras/novo}">Nova Leitura</a>
+    </div>
+
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+    <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Camera</th>
+                    <th>Linha</th>
+                    <th>Veiculo</th>
+                    <th>Data/Hora</th>
+                    <th>Contagem</th>
+                    <th>Confianca</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${leituras}">
+                    <td th:text="${l.idLeitura}"></td>
+                    <td th:text="${l.nomeCamera != null ? l.nomeCamera : '-'}"></td>
+                    <td th:text="${l.nomeLinha != null ? l.nomeLinha : '-'}"></td>
+                    <td th:text="${l.prefixoFrota != null ? l.prefixoFrota : '-'}"></td>
+                    <td th:text="${l.dataHoraLeitura != null} ? ${#temporals.format(l.dataHoraLeitura, 'dd/MM/yyyy HH:mm')} : '-'"></td>
+                    <td th:text="${l.contagemPessoas}"></td>
+                    <td th:text="${l.nivelConfianca != null} ? ${l.nivelConfianca} + '%' : '-'"></td>
+                    <td th:text="${l.statusLeitura}"></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{'/leituras/' + ${l.idLeitura} + '/editar'}">Editar</a>
+                        <form th:action="@{'/leituras/' + ${l.idLeitura} + '/deletar'}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(leituras)}">
+                    <td colspan="9" class="text-center text-muted">Nenhuma leitura registrada.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

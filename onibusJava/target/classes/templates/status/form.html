@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Formulario de Status</title>
+</head>
+<body>
+<div layout:fragment="conteudo">
+    <h2 class="h4 mb-3" th:text="${status.idStatus != null} ? 'Editar Status' : 'Novo Status'"></h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form th:action="${status.idStatus != null} ? @{'/status/' + ${status.idStatus} + '/atualizar'} : @{/status}"
+                  th:object="${status}" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Operacao</label>
+                        <select class="form-select" th:field="*{idOperacao}" required>
+                            <option value="">Selecione a operacao</option>
+                            <option th:each="o : ${operacoes}"
+                                    th:value="${o.idOperacao}"
+                                    th:text="'Operacao ' + ${o.idOperacao} + ' - ' + ${o.sentido}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Faixa</label>
+                        <select class="form-select" th:field="*{idFaixa}" required>
+                            <option value="">Selecione a faixa</option>
+                            <option th:each="f : ${faixas}"
+                                    th:value="${f.idFaixa}"
+                                    th:text="${f.nomeFaixa} + ' (' + ${f.percentualMin} + '% a ' + ${f.percentualMax} + '%)'"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Data e hora de referencia</label>
+                        <input type="datetime-local" class="form-control" th:field="*{dataHoraReferencia}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Percentual de ocupacao</label>
+                        <input type="number" step="0.01" min="0" class="form-control"
+                               th:field="*{percentualOcupacao}" required>
+                    </div>
+                </div>
+                <a class="btn btn-outline-secondary" th:href="@{/status}">Cancelar</a>
+                <button type="submit" class="btn btn-success">Salvar</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

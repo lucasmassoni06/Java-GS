@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Formulario de Linha</title>
+</head>
+<body>
+<div layout:fragment="conteudo">
+    <h2 class="h4 mb-3" th:text="${linha.idLinha != null} ? 'Editar Linha' : 'Nova Linha'"></h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form th:action="${linha.idLinha != null} ? @{'/linhas/' + ${linha.idLinha} + '/atualizar'} : @{/linhas}"
+                  method="post">
+                <div class="mb-3">
+                    <label class="form-label">Codigo da linha</label>
+                    <input class="form-control" name="codigoLinha" maxlength="10" required
+                           th:value="${linha.codigoLinha}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nome da linha</label>
+                    <input class="form-control" name="nomeLinha" maxlength="100" required
+                           th:value="${linha.nomeLinha}">
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Origem</label>
+                        <input class="form-control" name="origem" maxlength="80" required th:value="${linha.origem}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Destino</label>
+                        <input class="form-control" name="destino" maxlength="80" required th:value="${linha.destino}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ativa (S/N)</label>
+                    <input class="form-control" name="ativa" maxlength="1" required th:value="${linha.ativa}">
+                </div>
+                <a class="btn btn-outline-secondary" th:href="@{/linhas}">Cancelar</a>
+                <button type="submit" class="btn btn-success">Salvar</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

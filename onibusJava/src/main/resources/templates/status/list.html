@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Status de Ocupacao</title>
+</head>
+<body>
+<div layout:fragment="conteudo">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Status de Ocupacao</h2>
+        <a class="btn btn-success" th:href="@{/status/novo}">Novo Status</a>
+    </div>
+
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+    <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Operacao</th>
+                    <th>Linha</th>
+                    <th>Veiculo</th>
+                    <th>Faixa</th>
+                    <th>Percentual</th>
+                    <th>Referencia</th>
+                    <th>Cor</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${status}">
+                    <td th:text="${s.idStatus}"></td>
+                    <td th:text="${s.idOperacao != null ? s.idOperacao : '-'}"></td>
+                    <td th:text="${s.nomeLinha != null ? s.nomeLinha : '-'}"></td>
+                    <td th:text="${s.prefixoFrota != null ? s.prefixoFrota : '-'}"></td>
+                    <td th:text="${s.nomeFaixa != null ? s.nomeFaixa : '-'}"></td>
+                    <td th:text="${s.percentualOcupacao != null} ? ${#numbers.formatDecimal(s.percentualOcupacao, 1, 2)} + '%' : '-'"></td>
+                    <td th:text="${s.dataHoraReferencia != null} ? ${#temporals.format(s.dataHoraReferencia, 'dd/MM/yyyy HH:mm')} : '-'"></td>
+                    <td>
+                        <span th:if="${s.corHex != null}"
+                              th:style="'display:inline-block;width:18px;height:18px;background:' + ${s.corHex} + ';border-radius:3px;'"></span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{'/status/' + ${s.idStatus} + '/editar'}">Editar</a>
+                        <form th:action="@{'/status/' + ${s.idStatus} + '/deletar'}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(status)}">
+                    <td colspan="9" class="text-center text-muted">Nenhum status registrado.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

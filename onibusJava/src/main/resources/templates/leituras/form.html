@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Formulario de Leitura</title>
+</head>
+<body>
+<div layout:fragment="conteudo">
+    <h2 class="h4 mb-3" th:text="${leitura.idLeitura != null} ? 'Editar Leitura' : 'Nova Leitura'"></h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form th:action="${leitura.idLeitura != null} ? @{'/leituras/' + ${leitura.idLeitura} + '/atualizar'} : @{/leituras}"
+                  th:object="${leitura}" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Camera</label>
+                        <select class="form-select" th:field="*{idCamera}" required>
+                            <option value="">Selecione a camera</option>
+                            <option th:each="c : ${cameras}"
+                                    th:value="${c.idCamera}"
+                                    th:text="${c.nomeCamera}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Operacao</label>
+                        <select class="form-select" th:field="*{idOperacao}" required>
+                            <option value="">Selecione a operacao</option>
+                            <option th:each="o : ${operacoes}"
+                                    th:value="${o.idOperacao}"
+                                    th:text="'Operacao ' + ${o.idOperacao} + ' - ' + ${o.sentido}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Data e hora da leitura</label>
+                        <input type="datetime-local" class="form-control" th:field="*{dataHoraLeitura}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Contagem de pessoas</label>
+                        <input type="number" min="0" class="form-control" th:field="*{contagemPessoas}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nivel de confianca (0 a 100)</label>
+                        <input type="number" step="0.1" min="0" max="100" class="form-control"
+                               th:field="*{nivelConfianca}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Status da leitura</label>
+                        <select class="form-select" th:field="*{statusLeitura}" required>
+                            <option value="VALIDA">VALIDA</option>
+                            <option value="INVALIDA">INVALIDA</option>
+                        </select>
+                    </div>
+                </div>
+                <a class="btn btn-outline-secondary" th:href="@{/leituras}">Cancelar</a>
+                <button type="submit" class="btn btn-success">Salvar</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
