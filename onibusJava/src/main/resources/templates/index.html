@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}"
+      lang="pt-br">
+<head>
+    <title>Inicio</title>
+</head>
+<body>
+<div layout:fragment="conteudo">
+
+    <div class="mb-5">
+        <h1 class="fw-bold mb-1">CitizenTech</h1>
+        <p class="text-muted mb-0">Monitoramento de ocupacao em tempo real</p>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <a th:href="@{/linhas}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title fw-semibold text-dark">Linhas</h5>
+                        <p class="card-text text-muted small mb-0">
+                            Cadastro de linhas de onibus, origem e destino.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a th:href="@{/status}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title fw-semibold text-dark">Status de Ocupacao</h5>
+                        <p class="card-text text-muted small mb-0">
+                            Situacao atual de cada operacao em circulacao.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a th:href="@{/leituras}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title fw-semibold text-dark">Leituras</h5>
+                        <p class="card-text text-muted small mb-0">
+                            Contagens registradas pelas cameras.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
